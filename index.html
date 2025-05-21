@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PicoC Interpreter</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f2f4f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
+      position: relative;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+    button {
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .alert {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-weight: 500;
+      text-align: center;
+      display: none;
+    }
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .alert-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="alertBox" class="alert"></div>
+
+    <h2>PicoC Interpreter</h2>
+
+    <!-- Wrap input and button in a form to manage enter key -->
+    <form id="interpreterForm">
+      <input type="text" id="expression" placeholder="Enter expression like: a = 3 + 4;" />
+      <button type="submit">Evaluate</button>
+    </form>
+  </div>
+
+  <script>
+    function showAlert(message, isSuccess) {
+      const alertBox = document.getElementById("alertBox");
+      alertBox.style.display = "block";
+      alertBox.textContent = message;
+      alertBox.className = "alert " + (isSuccess ? "alert-success" : "alert-error");
+    }
+
+    document.getElementById("interpreterForm").addEventListener("submit", function (e) {
+      e.preventDefault(); // Prevent page refresh
+
+      const expr = document.getElementById("expression").value;
+
+      fetch("http://127.0.0.1:5000/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expression: expr }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Backend Error");
+          return res.json();
+        })
+        .then((data) => {
+          const isError = data.output.startsWith("Compilation Error") || data.output.startsWith("Runtime Error");
+          showAlert(data.output, !isError);
+        })
+        .catch((err) => {
+          showAlert("Error: " + err.message, false);
+        });
+    });
+  </script>
+</body>
+</html>
+
+
+
