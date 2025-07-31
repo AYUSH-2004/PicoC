@@ -1,120 +1,370 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PicoC Interpreter</title>
+  <title>PicoC & C Compiler</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/darcula.min.css">
   <style>
+    :root {
+      --text-color: #333;
+      --bg-color: #f0f2f5;
+       --overlay-bg: rgba(255, 255, 255, 0.65);
+      --border-color: rgba(0, 0, 0, 0.1);
+      --shadow-color: rgba(0, 0, 0, 0.1);
+      --button-bg: #007aff;
+      --button-text: white;
+    }
+    body.dark {
+  --text-color: #f8fafc;
+  --bg-color: #0a0a0a;
+  --overlay-bg: rgba(30, 41, 59, 0.75); /* Change this value */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --button-bg: #0a84ff;
+}
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f2f4f7;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      transition: background 0.5s ease;
+      padding: 50px 30px;
+      background: var(--bg-color);
     }
-    .container {
-      background: white;
-      padding: 30px 40px;
-      border-radius: 12px;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-      max-width: 500px;
+    .bg-video {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
-      position: relative;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
     }
+  .overlay {
+  background: var(--overlay-bg);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  padding: 40px;
+  border-radius: 20px;
+  max-width: 800px;
+  width: 90%;
+  box-shadow: 0 20px 50px var(--shadow-color);
+  border: 1px solid var(--border-color);
+  z-index: 1;
+}
+    
     h2 {
       text-align: center;
-      margin-bottom: 25px;
-      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+      font-weight: 700;
     }
-    input {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+    .welcome {
+      text-align: center;
+      font-style: italic;
+      margin-bottom: 20px;
+      color: var(--text-color);
+      opacity: 0.8;
+    }
+    .mode-indicator {
+      text-align: center;
+      font-weight: bold;
       margin-bottom: 15px;
+      color: var(--text-color);
     }
-    button {
-      width: 100%;
-      background-color: #007bff;
-      color: white;
-      padding: 12px;
-      font-size: 16px;
+    .theme-toggle {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .theme-toggle button {
+      padding: 10px 20px;
+      font-size: 1rem;
       border: none;
-      border-radius: 6px;
+      border-radius: 12px;
       cursor: pointer;
+      background-color: var(--button-bg);
+      color: var(--button-text);
       transition: background-color 0.3s ease;
     }
-    button:hover {
-      background-color: #0056b3;
+    .theme-toggle button:hover {
+        filter: brightness(1.1);
     }
-    .alert {
-      padding: 12px;
-      border-radius: 6px;
-      margin-bottom: 20px;
-      font-weight: 500;
+    #drop-zone {
+      border: 2px dashed var(--text-color);
+      border-radius: 15px;
+      padding: 25px;
       text-align: center;
+      margin: 20px 0;
+      color: var(--text-color);
+      opacity: 0.7;
+      transition: border-color 0.3s ease, background-color 0.3s ease;
+    }
+    #drop-zone:hover {
+        border-color: var(--button-bg);
+        background-color: rgba(0, 122, 255, 0.1);
+    }
+    input[type="file"] {
       display: none;
     }
+    button[type="submit"],
+    #runEditor,
+    #resetBtn {
+      display: block;
+      margin-top: 15px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.1rem;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    #resetBtn {
+        background-color: #6c757d;
+        border: 2px solid transparent;
+    }
+    #resetBtn:hover {
+        filter: brightness(1.1);
+        transform: translateY(-2px);
+    }
+    body.dark #resetBtn {
+        background-color: transparent;
+        border: 2px solid #888;
+        color: #888;
+    }
+    body.dark #resetBtn:hover {
+        background-color: #888;
+        color: #f8fafc;
+        border-color: #888;
+    }
+    .alert {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+      font-weight: 500;
+    }
     .alert-success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
+      background-color: #d1e7dd;
+      color: #0f5132;
     }
     .alert-error {
       background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
+      color: #842029;
+    }
+    .output-box {
+      margin-top: 20px;
+      background: var(--bg-color);
+      padding: 15px;
+      border-radius: 12px;
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+    }
+    body.dark .output-box {
+      background: #1e293b;
+    }
+    #editor {
+      height: 200px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 15px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+
+  <video autoplay muted loop class="bg-video">
+    <source src="3129671-uhd_3840_2160_30fps.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <div class="overlay">
+    <div class="theme-toggle">
+      <button id="themeButton">🌙 Dark</button>
+    </div>
+
+    <h2>PicoC & C Compiler</h2>
+    <div class="welcome">Welcome! Upload a <code>.txt</code>/<code>.c</code> file or write PicoC code directly below.</div>
+    <div class="mode-indicator" id="modeIndicator">Mode: Editor</div>
+
+    <div id="drop-zone">Drag and drop a <code>.txt</code> or <code>.c</code> file here or click to browse
+      <input type="file" id="fileInput" accept=".txt,.c" />
+    </div>
+
+    <textarea id="editor">// Write your PicoC code here</textarea>
+
+    <button id="runEditor">Run PicoC Code</button>
+    <button id="resetBtn">🔁 Reset</button>
+
+    <form id="interpreterForm" enctype="multipart/form-data" style="display: none;">
+      <input type="file" id="hiddenFileInput" />
+    </form>
+
     <div id="alertBox" class="alert"></div>
 
-    <h2>PicoC Interpreter</h2>
+    <div class="output-box" id="outputBox" style="display:none;">
+      <strong>🧠 Output:</strong>
+      <pre><code id="outputContent" class="language-c"></code></pre>
+    </div>
 
-    <!-- Wrap input and button in a form to manage enter key -->
-    <form id="interpreterForm">
-      <input type="text" id="expression" placeholder="Enter expression like: a = 3 + 4;" />
-      <button type="submit">Evaluate</button>
-    </form>
+    <div class="output-box" id="inputBox" style="display:none;">
+      <strong>📄 Input Code:</strong>
+      <pre><code id="inputContent" class="language-c"></code></pre>
+    </div>
+    <div id="executionTime" style="text-align:center; font-weight:bold; margin-top:10px;"></div>
+
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
   <script>
+    const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+      lineNumbers: true,
+      mode: "text/x-csrc",
+      theme: "default"
+    });
+
+    const fileInput = document.getElementById("fileInput");
+    const alertBox = document.getElementById("alertBox");
+    const outputBox = document.getElementById("outputBox");
+    const outputContent = document.getElementById("outputContent");
+    const inputBox = document.getElementById("inputBox");
+    const inputContent = document.getElementById("inputContent");
+    const modeIndicator = document.getElementById("modeIndicator");
+
     function showAlert(message, isSuccess) {
-      const alertBox = document.getElementById("alertBox");
-      alertBox.style.display = "block";
       alertBox.textContent = message;
       alertBox.className = "alert " + (isSuccess ? "alert-success" : "alert-error");
+      alertBox.style.display = "block";
     }
 
-    document.getElementById("interpreterForm").addEventListener("submit", function (e) {
-      e.preventDefault(); // Prevent page refresh
+    function setThemeMode(isDark) {
+      document.body.classList.toggle("dark", isDark);
+      document.getElementById("themeButton").textContent = isDark ? "☀ Light" : "🌙 Dark";
+      editor.setOption("theme", isDark ? "darcula" : "default");
+    }
 
-      const expr = document.getElementById("expression").value;
+    function toggleTheme() {
+      const isDark = !document.body.classList.contains("dark");
+      setThemeMode(isDark);
+    }
 
-      fetch("http://127.0.0.1:5000/evaluate", {
+    document.getElementById("themeButton").addEventListener("click", toggleTheme);
+    window.onload = () => {
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setThemeMode(prefersDark);
+    };
+
+    document.getElementById("runEditor").addEventListener("click", () => {
+        const code = editor.getValue();
+        const start = performance.now(); // start time
+
+        fetch("http://127.0.0.1:5000/evaluate_code", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: code })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const end = performance.now(); // end time
+            const timeTaken = (end - start).toFixed(2);
+            document.getElementById("executionTime").textContent = `⚡ Execution Time: ${timeTaken} ms`;
+
+            const isError = data.output.startsWith("Compilation Error") || data.output.startsWith("Runtime Error");
+            showAlert(isError ? "Errors found during evaluation." : "Code evaluated successfully!", !isError);
+            outputContent.textContent = data.output;
+            Prism.highlightElement(outputContent);
+            outputBox.style.display = "block";
+            inputBox.style.display = "none";
+            modeIndicator.textContent = "Mode: Editor";
+        })
+        .catch(err => {
+            showAlert("Error: " + err.message, false);
+        });
+    });
+
+    function handleFileUpload(file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      fileInput.value = '';
+
+      const isCFile = file.name.endsWith(".c");
+      const endpoint = isCFile ? "run_c_file" : "evaluate";
+
+      fetch(`http://127.0.0.1:5000/${endpoint}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ expression: expr }),
+        body: formData,
       })
-        .then((res) => {
-          if (!res.ok) throw new Error("Backend Error");
-          return res.json();
+        .then(res => res.json())
+        .then(data => {
+          const isError = data.output.startsWith("Compilation") || data.output.startsWith("Runtime") || data.output.startsWith("Execution");
+          showAlert(isError ? "Errors found during evaluation." : "Code evaluated successfully!", !isError);
+          outputContent.textContent = data.output;
+          Prism.highlightElement(outputContent);
+          outputBox.style.display = "block";
+          modeIndicator.textContent = `Mode: ${isCFile ? "C File" : "PicoC File"}`;
+
+          if (data.input_code) {
+            inputContent.textContent = data.input_code;
+            Prism.highlightElement(inputContent);
+            inputBox.style.display = "block";
+          } else {
+            inputBox.style.display = "none";
+          }
         })
-        .then((data) => {
-          const isError = data.output.startsWith("Compilation Error") || data.output.startsWith("Runtime Error");
-          showAlert(data.output, !isError);
-        })
-        .catch((err) => {
+        .catch(err => {
           showAlert("Error: " + err.message, false);
         });
+    }
+
+    document.getElementById("drop-zone").addEventListener("click", () => fileInput.click());
+    document.getElementById("drop-zone").addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.currentTarget.style.borderColor = "var(--button-bg)";
+    });
+    document.getElementById("drop-zone").addEventListener("dragleave", (e) => {
+      e.currentTarget.style.borderColor = "var(--text-color)";
+    });
+    document.getElementById("drop-zone").addEventListener("drop", (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file && (file.name.endsWith(".txt") || file.name.endsWith(".c"))) {
+        handleFileUpload(file);
+      } else {
+        showAlert("Please drop a valid .txt or .c file", false);
+      }
+    });
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (file) handleFileUpload(file);
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      editor.setValue("// Write your PicoC code here");
+      alertBox.style.display = "none";
+      outputBox.style.display = "none";
+      inputBox.style.display = "none";
+      outputContent.textContent = "";
+      inputContent.textContent = "";
+      modeIndicator.textContent = "Mode: Editor";
+      document.getElementById("executionTime").textContent = "";
     });
   </script>
 </body>
 </html>
+
 
 
 
