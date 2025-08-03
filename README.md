@@ -1,4 +1,4 @@
-# Web-Based  C Compiler
+# Web-Based Small C Compiler
 
 This project is a modern, web-based interface for compiling and running both a simplified version of C  and standard C code. It features a sleek, interactive frontend with a live code editor and a Python Flask backend that handles the compilation logic by invoking the GCC compiler.
 Users can Gain Understanding of Compiler Design through it by various steps involved in this .
